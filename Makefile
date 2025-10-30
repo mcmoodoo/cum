@@ -65,7 +65,7 @@ validate-aqua-router:
 		$(MAKE) ID=OPS_CHAIN_ID validate || exit 1; \
 		$(MAKE) ID=OPS_AQUA_ROUTER_NAME validate || exit 1; \
 		$(MAKE) ID=OPS_AQUA_ROUTER_VERSION validate || exit 1; \
-		$(MAKE) process-aqua-address process-aqua-router-name process-aqua-router-version || exit 1; \
+		$(MAKE) process-aqua-router-name process-aqua-router-version || exit 1; \
 		}
 
 validate:
