@@ -308,6 +308,26 @@ function swap(
 }
 ```
 
+**Safe Balance Queries**
+
+Use `safeBalances()` when you need to ensure that queried tokens are part of the active strategy. This is particularly important for:
+- Multi-token AMM strategies
+- Strategies with multiple tokens
+- Verifying strategy validity before executing swaps
+
+The function reverts if any token is not part of the strategy, preventing calculation errors.
+
+```solidity
+// Safe balance check before swap
+uint256[] memory balances = AQUA.safeBalances(
+    strategy.maker, 
+    address(this), 
+    strategyHash, 
+    tokens
+);
+// Transaction reverts if any token is not in the strategy
+```
+
 **Taker Implementation**
 ```solidity
 contract SimpleTrader is IAquaTakerCallback {
@@ -406,6 +426,15 @@ function balances(
     bytes32 strategyHash,
     address token
 ) external view returns (uint256);
+
+// Query multiple token balances with active strategy validation
+// Reverts if any token is not part of the active strategy
+function safeBalances(
+    address maker,
+    address app,
+    bytes32 strategyHash,
+    address[] calldata tokens
+) external view returns (uint256[] memory);
 ```
 
 ### AquaApp Base Contract
