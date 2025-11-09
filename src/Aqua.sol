@@ -19,7 +19,7 @@ contract Aqua is IAqua, Context {
     error StrategiesMustBeImmutable(address app, bytes32 strategyHash);
     error DockingShouldCloseAllTokens(address app, bytes32 strategyHash);
     error PushToNonActiveStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
-    error GetBalanceOfTokenNotInStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
+    error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
 
     uint8 private constant _DOCKED = 0xff;
 
@@ -28,18 +28,17 @@ contract Aqua is IAqua, Context {
             mapping(bytes32 strategyHash =>
                 mapping(address token => Balance)))) private _balances; // aka makers' allowances
 
-    function balances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint256) {
-        return _balances[maker][app][strategyHash][token].amount;
+    function rawBalances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint248 amount, uint8 tokensCount) {
+        return _balances[maker][app][strategyHash][token].load();
     }
 
     function safeBalances(address maker, address app, bytes32 strategyHash, address[] calldata tokens) external view returns (uint256[] memory amounts) {
         amounts = new uint256[](tokens.length);
+        mapping(address => Balance) storage tokenBalances = _balances[maker][app][strategyHash];
         for (uint256 i = 0; i < tokens.length; i++) {
-            Balance storage balance = _balances[maker][app][strategyHash][tokens[i]];
-            (uint248 prevBalance, uint8 tokensCount) = balance.load();
-
-            require(tokensCount > 0 && tokensCount != _DOCKED, GetBalanceOfTokenNotInStrategyPrevented(maker, app, strategyHash, tokens[i]));
-            amounts[i] = prevBalance;
+            (uint248 amount, uint8 tokensCount) = tokenBalances[tokens[i]].load();
+            require(tokensCount > 0 && tokensCount != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, tokens[i]));
+            amounts[i] = amount;
         }
     }
 

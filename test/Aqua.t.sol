@@ -196,6 +196,7 @@ contract AquaTest is Test {
 
     function testFullLifecycle() public {
         bytes32 strategyHash = keccak256("lifecycle");
+        uint256 newBalance;
 
         // 1. Ship with 2 tokens
         vm.prank(maker);
@@ -209,12 +210,14 @@ contract AquaTest is Test {
         // 2. Push to token1
         vm.prank(pusher);
         aqua.push(maker, app, strategyHash, address(token1), 50e18);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 150e18);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance, 150e18);
 
         // 3. Pull from app
         vm.prank(app);
         aqua.pull(maker, strategyHash, address(token1), 30e18, app);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 120e18);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance, 120e18);
 
         // 4. Dock all tokens
         vm.prank(maker);
@@ -230,11 +233,15 @@ contract AquaTest is Test {
         aqua.push(maker, app, strategyHash, address(token1), 10e18);
 
         // 6. Verify balances are zero after dock
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 0);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token2)), 0);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance, 0);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+        assertEq(newBalance, 0);
     }
 
     function testMultipleStrategiesSameTokens() public {
+        uint256 newBalance;
+
         // Ship strategy 1
         vm.prank(maker);
         aqua.ship(
@@ -257,30 +264,36 @@ contract AquaTest is Test {
         bytes32 hash1 = keccak256("multi1");
         bytes32 hash2 = keccak256("multi2");
 
-        assertEq(aqua.balances(maker, app, hash1, address(token1)), 100e18);
-        assertEq(aqua.balances(maker, app, hash2, address(token1)), 300e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        assertEq(newBalance, 100e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        assertEq(newBalance, 300e18);
 
         // Push to strategy 1 doesn't affect strategy 2
         vm.prank(pusher);
         aqua.push(maker, app, hash1, address(token1), 50e18);
 
-        assertEq(aqua.balances(maker, app, hash1, address(token1)), 150e18);
-        assertEq(aqua.balances(maker, app, hash2, address(token1)), 300e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        assertEq(newBalance, 150e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        assertEq(newBalance, 300e18);
 
         // Can dock strategies independently
         vm.prank(maker);
         aqua.dock(app, hash1, dynamic([address(token1), address(token2)]));
 
         // Strategy 1 is docked, strategy 2 still active
-        assertEq(aqua.balances(maker, app, hash1, address(token1)), 0);
-        assertEq(aqua.balances(maker, app, hash2, address(token1)), 300e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        assertEq(newBalance, 0);
+        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        assertEq(newBalance, 300e18);
     }
 
     // ========== BALANCES AND SAFEBALANCES TESTS ==========
 
     function testBalancesReturnsZeroForNonExistentStrategy() public {
         // Query balance for non-existent strategy
-        uint256 balance = aqua.balances(maker, app, keccak256("nonexistent"), address(token1));
+        (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("nonexistent"), address(token1));
         assertEq(balance, 0);
     }
 
@@ -295,7 +308,7 @@ contract AquaTest is Test {
         );
 
         // Query balance for token2 (not in strategy) - should return 0
-        uint256 balance = aqua.balances(maker, app, keccak256("balances_test"), address(token2));
+        (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("balances_test"), address(token2));
         assertEq(balance, 0);
     }
 
@@ -312,9 +325,12 @@ contract AquaTest is Test {
         bytes32 strategyHash = keccak256("balances_multi");
 
         // Check all balances
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 100e18);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token2)), 200e18);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token3)), 300e18);
+        (uint256 newBalance1,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance1, 100e18);
+        (uint256 newBalance2,) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+        assertEq(newBalance2, 200e18);
+        (uint256 newBalance3,) = aqua.rawBalances(maker, app, strategyHash, address(token3));
+        assertEq(newBalance3, 300e18);
     }
 
     function testSafeBalancesReturnsCorrectAmountsForActiveStrategy() public {
@@ -346,7 +362,7 @@ contract AquaTest is Test {
         // Try to query safeBalances for non-existent strategy
         vm.expectRevert(
             abi.encodeWithSelector(
-                Aqua.GetBalanceOfTokenNotInStrategyPrevented.selector,
+                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
                 maker,
                 app,
                 keccak256("nonexistent"),
@@ -376,7 +392,7 @@ contract AquaTest is Test {
         // Try to query with token3 (not in strategy)
         vm.expectRevert(
             abi.encodeWithSelector(
-                Aqua.GetBalanceOfTokenNotInStrategyPrevented.selector,
+                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
                 maker,
                 app,
                 strategyHash,
@@ -414,7 +430,7 @@ contract AquaTest is Test {
         // Try to query safeBalances after dock
         vm.expectRevert(
             abi.encodeWithSelector(
-                Aqua.GetBalanceOfTokenNotInStrategyPrevented.selector,
+                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
                 maker,
                 app,
                 strategyHash,

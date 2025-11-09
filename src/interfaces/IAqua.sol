@@ -42,8 +42,9 @@ interface IAqua {
     /// @param app The address of the app/strategy that can pull tokens
     /// @param strategyHash The hash of the strategy being used
     /// @param token The address of the token
-    /// @return The current balance amount
-    function balances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint256);
+    /// @return amount The current balance amount
+    /// @return tokensCount The number of tokens in the strategy
+    function rawBalances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint248 amount, uint8 tokensCount);
 
     /// @notice Returns balances of multiple tokens in a strategy, reverts if any of the tokens is not part of the active strategy
     /// @param maker The address of the maker who granted the balances

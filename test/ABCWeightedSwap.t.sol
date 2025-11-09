@@ -461,9 +461,9 @@ contract ABCWeightedSwapTest is Test, TestCallback {
         console.log("");
 
         // Record initial balances and show the weighted invariant concept
-        uint256 initialBal0 = aqua.balances(strategy.maker, app, strategyHash, address(token0));
-        uint256 initialBal1 = aqua.balances(strategy.maker, app, strategyHash, address(token1));
-        uint256 initialBal2 = aqua.balances(strategy.maker, app, strategyHash, address(token2));
+        (uint256 initialBal0,) = aqua.rawBalances(strategy.maker, app, strategyHash, address(token0));
+        (uint256 initialBal1,) = aqua.rawBalances(strategy.maker, app, strategyHash, address(token1));
+        (uint256 initialBal2,) = aqua.rawBalances(strategy.maker, app, strategyHash, address(token2));
 
         console.log("INITIAL STATE (pool balances):");
         console.log("  token0: %s (weight: 20%% = 0.2 exponent)", initialBal0);
@@ -490,9 +490,9 @@ contract ABCWeightedSwapTest is Test, TestCallback {
         );
 
         // Show the new balances and explain the weighted invariant preservation
-        uint256 newBal0 = aqua.balances(strategy.maker, app, strategyHash, address(token0));
-        uint256 newBal1 = aqua.balances(strategy.maker, app, strategyHash, address(token1));
-        uint256 newBal2 = aqua.balances(strategy.maker, app, strategyHash, address(token2));
+        (uint256 newBal0,) = aqua.rawBalances(strategy.maker, app, strategyHash, address(token0));
+        (uint256 newBal1,) = aqua.rawBalances(strategy.maker, app, strategyHash, address(token1));
+        (uint256 newBal2,) = aqua.rawBalances(strategy.maker, app, strategyHash, address(token2));
 
         console.log("AFTER SWAP (new pool balances):");
         console.log("  token0: %s (was %s, changed by +%s)", newBal0, initialBal0, newBal0 - initialBal0);
