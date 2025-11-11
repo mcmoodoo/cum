@@ -21,7 +21,7 @@ Single LP:                                    Single LP:
 
    [LP]                                         [LP]($$)
     │                                              │
-    ├─────────┬─────────┐                          │  
+    ├─────────┬─────────┐                          │
     │         │         │                          │
     │         │         │                      ┌───▼────┐
 ┌───▼────┐┌───▼────┐┌───▼────┐                 │  Aqua  │
@@ -120,7 +120,7 @@ This flexibility combines the safety of immutability with practical adaptability
 ### Pull/Push Interface
 
 > **⚡ Important: Swap Execution Only**
-> 
+>
 > `pull()` and `push()` are used exclusively during swap execution to transfer tokens between makers and takers.
 > They are **NOT** used for liquidity management. Initial liquidity is set via `ship()` and shouldn't be modified afterward.
 
@@ -144,7 +144,7 @@ aqua.push(maker, app, strategyHash, tokenIn, amountIn);
 ### For Liquidity Providers
 
 > **💡 Strategy Management**
-> 
+>
 > - **Immutable**: Once shipped, parameters and initial liquidity are locked
 > - **No custody**: Your tokens stay in your wallet with approval to Aqua
 > - **Easy updates**: `dock()` → `ship()` to change parameters (no token transfers needed)
@@ -234,7 +234,7 @@ xycSwap.swapExactIn(
 ```solidity
 contract MyAMM is AquaApp {
     constructor(IAqua aqua) AquaApp(aqua) {}
-    
+
     struct Strategy {
         address maker; // Must-have to make strategyHash unique per user
         address token0;
@@ -265,16 +265,16 @@ function swap(
 
     amountOut = // ... compute output amount based on AMM logic
     uint256 expectedBalanceIn = balanceIn + amountIn;
-    
+
     // Pull output tokens to recipient (SWAP EXECUTION)
     AQUA.pull(strategy.maker, strategyHash, tokenOut, amountOut, recipient);
-    
+
     // Callback for input tokens
     IAquaTakerCallback(msg.sender).aquaTakerCallback(
         tokenIn, tokenOut, amountIn, amountOut,
         strategy.maker, address(this), strategyHash, takerData
     );
-    
+
     // Verify input received (SWAP EXECUTION)
     _safeCheckAquaPush(strategy.maker, strategyHash, tokenIn, expectedBalanceIn);
 }
@@ -297,7 +297,7 @@ function swap(
     uint256 balanceOut = AQUA.balances(strategy.maker, address(this), strategyHash, tokenOut);
 
     amountOut = // ... compute output amount based on AMM logic
-    
+
     // Pull output tokens to recipient (SWAP EXECUTION)
     AQUA.pull(strategy.maker, strategyHash, tokenOut, amountOut, recipient);
 
@@ -312,14 +312,14 @@ function swap(
 ```solidity
 contract SimpleTrader is IAquaTakerCallback {
     IAqua public immutable AQUA;
-    
+
     constructor(IAqua _aqua, IERC20[] memory tokens) {
         AQUA = _aqua;
         for (uint256 i = 0; i < tokens.length; i++) {
             tokens[i].approve(address(AQUA), type(uint256).max);
         }
     }
-    
+
     function swap(
         XYCSwap app,
         XYCSwap.Strategy calldata strategy,
@@ -335,7 +335,7 @@ contract SimpleTrader is IAquaTakerCallback {
             ""           // takerData
         );
     }
-    
+
     function aquaTakerCallback(
         address tokenIn,
         address,  // tokenOut
@@ -450,8 +450,8 @@ interface IAquaTakerCallback {
 
 ```bash
 # Clone repository
-git clone https://github.com/1inch/aqua-protocol
-cd aqua-protocol
+git clone https://github.com/1inch/aqua
+cd aqua
 
 # Install dependencies
 forge install
