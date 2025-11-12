@@ -1,6 +1,6 @@
 {
   "name": "@1inch/aqua",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Shared liquidity layer protocol",
   "main": "index.js",
   "directories": {
