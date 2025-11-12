@@ -129,7 +129,6 @@ contract ABCWeightedSwap is AquaApp {
         io.tokenOut = strategy.tokens[indexOut];
         io.weightIn = strategy.normalizedWeights[indexIn];
         io.weightOut = strategy.normalizedWeights[indexOut];
-        io.balanceIn = AQUA.balances(strategy.maker, address(this), strategyHash, io.tokenIn);
-        io.balanceOut = AQUA.balances(strategy.maker, address(this), strategyHash, io.tokenOut);
+        (io.balanceIn, io.balanceOut) = AQUA.safeBalances(strategy.maker, address(this), strategyHash, io.tokenIn, io.tokenOut);
     }
 }

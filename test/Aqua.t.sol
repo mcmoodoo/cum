@@ -196,6 +196,7 @@ contract AquaTest is Test {
 
     function testFullLifecycle() public {
         bytes32 strategyHash = keccak256("lifecycle");
+        uint256 newBalance;
 
         // 1. Ship with 2 tokens
         vm.prank(maker);
@@ -209,12 +210,14 @@ contract AquaTest is Test {
         // 2. Push to token1
         vm.prank(pusher);
         aqua.push(maker, app, strategyHash, address(token1), 50e18);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 150e18);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance, 150e18);
 
         // 3. Pull from app
         vm.prank(app);
         aqua.pull(maker, strategyHash, address(token1), 30e18, app);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 120e18);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance, 120e18);
 
         // 4. Dock all tokens
         vm.prank(maker);
@@ -230,11 +233,15 @@ contract AquaTest is Test {
         aqua.push(maker, app, strategyHash, address(token1), 10e18);
 
         // 6. Verify balances are zero after dock
-        assertEq(aqua.balances(maker, app, strategyHash, address(token1)), 0);
-        assertEq(aqua.balances(maker, app, strategyHash, address(token2)), 0);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance, 0);
+        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+        assertEq(newBalance, 0);
     }
 
     function testMultipleStrategiesSameTokens() public {
+        uint256 newBalance;
+
         // Ship strategy 1
         vm.prank(maker);
         aqua.ship(
@@ -257,22 +264,220 @@ contract AquaTest is Test {
         bytes32 hash1 = keccak256("multi1");
         bytes32 hash2 = keccak256("multi2");
 
-        assertEq(aqua.balances(maker, app, hash1, address(token1)), 100e18);
-        assertEq(aqua.balances(maker, app, hash2, address(token1)), 300e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        assertEq(newBalance, 100e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        assertEq(newBalance, 300e18);
 
         // Push to strategy 1 doesn't affect strategy 2
         vm.prank(pusher);
         aqua.push(maker, app, hash1, address(token1), 50e18);
 
-        assertEq(aqua.balances(maker, app, hash1, address(token1)), 150e18);
-        assertEq(aqua.balances(maker, app, hash2, address(token1)), 300e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        assertEq(newBalance, 150e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        assertEq(newBalance, 300e18);
 
         // Can dock strategies independently
         vm.prank(maker);
         aqua.dock(app, hash1, dynamic([address(token1), address(token2)]));
 
         // Strategy 1 is docked, strategy 2 still active
-        assertEq(aqua.balances(maker, app, hash1, address(token1)), 0);
-        assertEq(aqua.balances(maker, app, hash2, address(token1)), 300e18);
+        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        assertEq(newBalance, 0);
+        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        assertEq(newBalance, 300e18);
+    }
+
+    // ========== BALANCES AND SAFEBALANCES TESTS ==========
+
+    function testBalancesReturnsZeroForNonExistentStrategy() public {
+        // Query balance for non-existent strategy
+        (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("nonexistent"), address(token1));
+        assertEq(balance, 0);
+    }
+
+    function testBalancesReturnsZeroForTokenNotInStrategy() public {
+        // Ship with token1 only
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "balances_test",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        // Query balance for token2 (not in strategy) - should return 0
+        (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("balances_test"), address(token2));
+        assertEq(balance, 0);
+    }
+
+    function testBalancesReturnsCorrectAmounts() public {
+        // Ship with multiple tokens
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "balances_multi",
+            dynamic([address(token1), address(token2), address(token3)]),
+            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)])
+        );
+
+        bytes32 strategyHash = keccak256("balances_multi");
+
+        // Check all balances
+        (uint256 newBalance1,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(newBalance1, 100e18);
+        (uint256 newBalance2,) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+        assertEq(newBalance2, 200e18);
+        (uint256 newBalance3,) = aqua.rawBalances(maker, app, strategyHash, address(token3));
+        assertEq(newBalance3, 300e18);
+    }
+
+    function testSafeBalancesReturnsCorrectAmountsForActiveStrategy() public {
+        // Ship with multiple tokens
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "safe_balances",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(150e18), uint256(250e18)])
+        );
+
+        bytes32 strategyHash = keccak256("safe_balances");
+
+        // Query safeBalances
+        (uint256 balance0, uint256 balance1) = aqua.safeBalances(
+            maker,
+            app,
+            strategyHash,
+            address(token1),
+            address(token2)
+        );
+
+        assertEq(balance0, 150e18);
+        assertEq(balance1, 250e18);
+    }
+
+    function testSafeBalancesRevertsForNonExistentStrategy() public {
+        // Try to query safeBalances for non-existent strategy
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                maker,
+                app,
+                keccak256("nonexistent"),
+                address(token1)
+            )
+        );
+        aqua.safeBalances(
+            maker,
+            app,
+            keccak256("nonexistent"),
+            address(token1),
+            address(token2)
+        );
+    }
+
+    function testSafeBalancesRevertsIfAnyTokenNotInStrategy() public {
+        // Ship with token1 and token2
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "safe_partial",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+
+        bytes32 strategyHash = keccak256("safe_partial");
+
+        // Try to query with token3 (not in strategy)
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                maker,
+                app,
+                strategyHash,
+                address(token3)
+            )
+        );
+        aqua.safeBalances(
+            maker,
+            app,
+            strategyHash,
+            address(token1),
+            address(token3)
+        );
+    }
+
+    function testSafeBalancesRevertsAfterDock() public {
+        // Ship and then dock
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "safe_docked",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        bytes32 strategyHash = keccak256("safe_docked");
+
+        // Dock the strategy
+        vm.prank(maker);
+        aqua.dock(
+            app,
+            strategyHash,
+            dynamic([address(token1)])
+        );
+
+        // Try to query safeBalances after dock
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                maker,
+                app,
+                strategyHash,
+                address(token1)
+            )
+        );
+        aqua.safeBalances(
+            maker,
+            app,
+            strategyHash,
+            address(token1),
+            address(token2)
+        );
+    }
+
+    function testSafeBalancesTracksChangesFromPushPull() public {
+        // Ship strategy
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "safe_changes",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+
+        bytes32 strategyHash = keccak256("safe_changes");
+
+        // Push some tokens
+        vm.prank(pusher);
+        aqua.push(maker, app, strategyHash, address(token1), 50e18);
+
+        // Pull some tokens
+        vm.prank(app);
+        aqua.pull(maker, strategyHash, address(token2), 50e18, app);
+
+        // Verify safeBalances reflects the changes
+        (uint256 balance0, uint256 balance1) = aqua.safeBalances(
+            maker,
+            app,
+            strategyHash,
+            address(token1),
+            address(token2)
+        );
+
+        assertEq(balance0, 150e18); // 100 + 50 pushed
+        assertEq(balance1, 150e18); // 200 - 50 pulled
     }
 }

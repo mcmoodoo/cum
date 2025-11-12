@@ -151,8 +151,8 @@ contract XYCSwapTest is Test, TestCallback {
         assertEq(token1.balanceOf(address(this)), initialBalance1 + amountOut, "Should receive token1");
 
         // Verify pool balances
-        uint256 newBalance0 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token0));
-        uint256 newBalance1 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 newBalance0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 newBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
 
         // Pool should have more token0, less token1
         assertEq(newBalance0, INITIAL_AMOUNT0 + amountIn, "Pool should have more token0");
@@ -256,8 +256,8 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 amountOut = xycSwap.swapExactIn(strategy, true, amountIn, 0, address(this), takerData);
 
         // Get new balances
-        uint256 newBalance0 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token0));
-        uint256 newBalance1 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 newBalance0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 newBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
 
         // Calculate new k (should be slightly higher due to fees)
         uint256 newK = newBalance0 * newBalance1;
@@ -276,8 +276,8 @@ contract XYCSwapTest is Test, TestCallback {
         (address app, XYCSwap.Strategy memory strategy) = createStrategy();
 
         uint256 amountOut1 = swap(app, strategy, true, 10);
-        uint256 balance0After1 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token0));
-        uint256 balance1After1 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 balance0After1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 balance1After1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
 
         uint256 expectedAmountOut2 = calculateAmountOut(10, balance0After1, balance1After1, FEE_BPS);
         uint256 amountOut2 = swap(app, strategy, true, 10);
@@ -335,10 +335,10 @@ contract XYCSwapTest is Test, TestCallback {
         (address app, XYCSwap.Strategy memory strategy) = createStrategy();
 
         // Track initial total value (including taker's balance)
-        uint256 initialTotal0 =
-            aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token0)) + token0.balanceOf(address(this)) + token0.balanceOf(taker);
-        uint256 initialTotal1 =
-            aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token1)) + token1.balanceOf(address(this)) + token1.balanceOf(taker);
+        (uint256 initialTotal0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        initialTotal0 += token0.balanceOf(address(this)) + token0.balanceOf(taker);
+        (uint256 initialTotal1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        initialTotal1 += token1.balanceOf(address(this)) + token1.balanceOf(taker);
 
         // Perform multiple swaps
         swap(app, strategy, true, 10);
@@ -346,10 +346,10 @@ contract XYCSwapTest is Test, TestCallback {
         swap(app, strategy, true, 15);
 
         // Track final total value (including taker's balance)
-        uint256 finalTotal0 =
-            aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token0)) + token0.balanceOf(address(this)) + token0.balanceOf(taker);
-        uint256 finalTotal1 =
-            aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token1)) + token1.balanceOf(address(this)) + token1.balanceOf(taker);
+        (uint256 finalTotal0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        finalTotal0 += token0.balanceOf(address(this)) + token0.balanceOf(taker);
+        (uint256 finalTotal1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        finalTotal1 += token1.balanceOf(address(this)) + token1.balanceOf(taker);
 
         // Total tokens should be conserved (no creation or destruction)
         assertEq(finalTotal0, initialTotal0, "Total token0 should be conserved");
@@ -473,7 +473,7 @@ contract XYCSwapTest is Test, TestCallback {
         assertTrue(amountOut < INITIAL_AMOUNT1, "Cannot drain pool completely");
 
         // Verify pool still has some token1
-        uint256 remainingBalance1 = aqua.balances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 remainingBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
         assertTrue(remainingBalance1 > 0, "Pool should never be completely drained");
     }
 

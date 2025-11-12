@@ -19,6 +19,7 @@ contract Aqua is IAqua, Context {
     error StrategiesMustBeImmutable(address app, bytes32 strategyHash);
     error DockingShouldCloseAllTokens(address app, bytes32 strategyHash);
     error PushToNonActiveStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
+    error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
 
     uint8 private constant _DOCKED = 0xff;
 
@@ -27,8 +28,18 @@ contract Aqua is IAqua, Context {
             mapping(bytes32 strategyHash =>
                 mapping(address token => Balance)))) private _balances; // aka makers' allowances
 
-    function balances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint256) {
-        return _balances[maker][app][strategyHash][token].amount;
+    function rawBalances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint248 balance, uint8 tokensCount) {
+        return _balances[maker][app][strategyHash][token].load();
+    }
+
+    function safeBalances(address maker, address app, bytes32 strategyHash, address token0, address token1) external view returns (uint256 balance0, uint256 balance1) {
+        (uint248 amount0, uint8 tokensCount0) = _balances[maker][app][strategyHash][token0].load();
+        require(tokensCount0 > 0 && tokensCount0 != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, token0));
+        balance0 = amount0;
+
+        (uint248 amount1, uint8 tokensCount1) = _balances[maker][app][strategyHash][token1].load();
+        require(tokensCount1 > 0 && tokensCount1 != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, token1));
+        balance1 = amount1;
     }
 
     function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {

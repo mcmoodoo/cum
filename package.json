@@ -1,5 +1,5 @@
 {
-  "name": "@1inch/aqua-protocol",
+  "name": "@1inch/aqua",
   "version": "1.0.0",
   "description": "Shared liquidity layer protocol",
   "main": "index.js",
@@ -20,12 +20,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/1inch/aqua-protocol.git"
+    "url": "git+https://github.com/1inch/aqua.git"
   },
   "author": "Degensoft Ltd.",
   "license": "LicenseRef-Degensoft-ARSL-1.0-Audit",
   "bugs": {
-    "url": "https://github.com/1inch/aqua-protocol/issues"
+    "url": "https://github.com/1inch/aqua/issues"
   },
-  "homepage": "https://github.com/1inch/aqua-protocol#readme"
+  "homepage": "https://github.com/1inch/aqua#readme"
 }
