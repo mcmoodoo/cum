@@ -42,38 +42,35 @@ contract Aqua is IAqua {
     }
 
     function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
-        address maker = msg.sender;
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
 
-        emit Shipped(maker, app, strategyHash, strategy);
+        emit Shipped(msg.sender, app, strategyHash, strategy);
         for (uint256 i = 0; i < tokens.length; i++) {
-            Balance storage balance = _balances[maker][app][strategyHash][tokens[i]];
+            Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
             require(balance.tokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
             balance.store(amounts[i].toUint248(), tokensCount);
-            emit Pushed(maker, app, strategyHash, tokens[i], amounts[i]);
+            emit Pushed(msg.sender, app, strategyHash, tokens[i], amounts[i]);
         }
     }
 
     function dock(address app, bytes32 strategyHash, address[] calldata tokens) external {
-        address maker = msg.sender;
         for (uint256 i = 0; i < tokens.length; i++) {
-            Balance storage balance = _balances[maker][app][strategyHash][tokens[i]];
+            Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
             require(balance.tokensCount == tokens.length, DockingShouldCloseAllTokens(app, strategyHash));
             balance.store(0, _DOCKED);
         }
-        emit Docked(maker, app, strategyHash);
+        emit Docked(msg.sender, app, strategyHash);
     }
 
     function pull(address maker, bytes32 strategyHash, address token, uint256 amount, address to) external {
-        address app = msg.sender;
-        Balance storage balance = _balances[maker][app][strategyHash][token];
+        Balance storage balance = _balances[maker][msg.sender][strategyHash][token];
         (uint248 prevBalance, uint8 tokensCount) = balance.load();
         balance.store(prevBalance - amount.toUint248(), tokensCount);
 
         IERC20(token).safeTransferFrom(maker, to, amount);
-        emit Pulled(maker, app, strategyHash, token, amount);
+        emit Pulled(maker, msg.sender, strategyHash, token, amount);
     }
 
     function push(address maker, address app, bytes32 strategyHash, address token, uint256 amount) external {
