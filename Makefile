@@ -11,8 +11,6 @@ export
 
 CURRENT_DIR:=$(shell pwd)
 
-FILE_CONSTANTS_JSON:=$(CURRENT_DIR)/config/constants.json
-
 OPS_NETWORK := $(subst ",,$(OPS_NETWORK))
 OPS_CHAIN_ID := $(subst ",,$(OPS_CHAIN_ID))
 
@@ -63,9 +61,6 @@ validate-aqua-router:
 		@{ \
 		$(MAKE) ID=OPS_NETWORK validate || exit 1; \
 		$(MAKE) ID=OPS_CHAIN_ID validate || exit 1; \
-		$(MAKE) ID=OPS_AQUA_ROUTER_NAME validate || exit 1; \
-		$(MAKE) ID=OPS_AQUA_ROUTER_VERSION validate || exit 1; \
-		$(MAKE) process-aqua-router-name process-aqua-router-version || exit 1; \
 		}
 
 validate:
@@ -75,23 +70,6 @@ validate:
 				echo "$${ID} is not set (Value: '$${VALUE}')!"; \
 				exit 1; \
 			fi; \
-		}
-
-# Process constant functions
-process-aqua-router-name:
-		@$(MAKE) OPS_GEN_VAL='$(OPS_AQUA_ROUTER_NAME)' OPS_GEN_KEY='aquaRouterName' upsert-constant
-
-process-aqua-router-version:
-		@$(MAKE) OPS_GEN_VAL='$(OPS_AQUA_ROUTER_VERSION)' OPS_GEN_KEY='aquaRouterVersion' upsert-constant
-
-upsert-constant:
-		@{ \
-		$(MAKE) ID=OPS_GEN_VAL validate || exit 1; \
-		$(MAKE) ID=OPS_GEN_KEY validate || exit 1; \
-		$(MAKE) ID=OPS_CHAIN_ID validate || exit 1; \
-		tmpfile=$$(mktemp); \
-		jq '.$(OPS_GEN_KEY)."$(OPS_CHAIN_ID)" = $(OPS_GEN_VAL)' $(FILE_CONSTANTS_JSON) > $$tmpfile && mv $$tmpfile $(FILE_CONSTANTS_JSON); \
-		echo "Updated $(OPS_GEN_KEY)[$(OPS_CHAIN_ID)] = $(OPS_GEN_VAL)"; \
 		}
 
 # Get deployed contract addresses from deployment files
@@ -177,6 +155,5 @@ help:
 		@echo "Available targets:"
 		@grep -E '^[a-zA-Z0-9_.-]+:' $(CURRENT_DIR)/Makefile | grep -v '^\.' | awk -F: '{print "  " $$1}' | sort -u
 
-.PHONY: deploy-aqua-router deploy-aqua-router-impl save-deployments contract-address validate-aqua-router \
-        validate process-aqua-address process-aqua-router-name process-aqua-router-version upsert-constant \
+.PHONY: deploy-aqua-router deploy-aqua-router-impl save-deployments contract-address validate-aqua-router validate \
         get get-outputs update build tests coverage snapshot snapshot-check format clean lint anvil balance balance-erc20 help
