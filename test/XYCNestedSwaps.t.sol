@@ -384,7 +384,7 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         uint256 amountIn,
         uint256 amountOut,
         address maker_,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata takerData
     )
@@ -422,7 +422,7 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
                 // console.log("Sufficient balance - attempting malicious over-push...");
                 IERC20(tokenIn).approve(address(aqua), maliciousAmount);
 
-                try aqua.push(maker_, implementation, strategyHash, tokenIn, maliciousAmount) {
+                try aqua.push(maker_, app, strategyHash, tokenIn, maliciousAmount) {
                     // console.log("!!! MALICIOUS OVER-PUSH SUCCEEDED !!!");
                     // console.log("Pushed", maliciousAmount - amountIn, "extra tokens to pool");
                     // console.log("Pool balance artificially inflated!");
@@ -433,7 +433,7 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
                     // Fallback to normal push
                     // console.log("Falling back to normal push amount...");
                     IERC20(tokenIn).approve(address(aqua), amountIn);
-                    aqua.push(maker_, implementation, strategyHash, tokenIn, amountIn);
+                    aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
                 } catch (bytes memory lowLevelData) {
                     // console.log("Malicious over-push FAILED with low-level error");
                     // console.log("Error data length:", lowLevelData.length);
@@ -441,19 +441,19 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
                     // Fallback to normal push
                     // console.log("Falling back to normal push amount...");
                     IERC20(tokenIn).approve(address(aqua), amountIn);
-                    aqua.push(maker_, implementation, strategyHash, tokenIn, amountIn);
+                    aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
                 }
             } else {
                 // console.log("Insufficient balance for malicious push - using normal amount");
                 IERC20(tokenIn).approve(address(aqua), amountIn);
-                aqua.push(maker_, implementation, strategyHash, tokenIn, amountIn);
+                aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
             }
 
             attemptMaliciousPush = false; // Only try once
         } else {
             // Normal push
             IERC20(tokenIn).approve(address(aqua), amountIn);
-            aqua.push(maker_, implementation, strategyHash, tokenIn, amountIn);
+            aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
         }
 
         // console.log("   AQUA.PUSH() completed successfully");

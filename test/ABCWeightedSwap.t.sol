@@ -599,7 +599,7 @@ contract ABCWeightedSwapTest is Test, TestCallback {
         uint256 amountIn,
         uint256, /* amountOut */
         address maker_,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata /* takerData */
     )
@@ -607,7 +607,7 @@ contract ABCWeightedSwapTest is Test, TestCallback {
         override
     {
         IERC20(tokenIn).approve(address(aqua), amountIn);
-        aqua.push(maker_, implementation, strategyHash, tokenIn, amountIn);
+        aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
     }
 
     /*

@@ -9,7 +9,7 @@ interface IXYCSwapCallback {
         uint256 amountIn,
         uint256 amountOut,
         address maker,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata takerData
     ) external;

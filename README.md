@@ -204,14 +204,14 @@ contract Trader is IXYCSwapCallback {
         uint256 amountIn,
         uint256 amountOut,
         address maker,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata takerData
     ) external override {
         // Transfer tokenIn to complete the swap (requires token approval)
         // This is the ONLY appropriate use of push() - during swap execution
         IERC20(tokenIn).forceApprove(aqua, amountIn);
-        aqua.push(maker, implementation, strategyHash, tokenIn, amountIn);
+        aqua.push(maker, app, strategyHash, tokenIn, amountIn);
     }
 }
 ```
@@ -361,12 +361,12 @@ contract SimpleTrader is IXYCSwapCallback {
         uint256 amountIn,
         uint256,  // amountOut
         address maker,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata
     ) external override {
         // Transfer input tokens to complete swap (SWAP EXECUTION ONLY)
-        AQUA.push(maker, implementation, strategyHash, tokenIn, amountIn);
+        AQUA.push(maker, app, strategyHash, tokenIn, amountIn);
     }
 }
 ```
@@ -468,7 +468,7 @@ interface IXYCSwapCallback {
         uint256 amountIn,
         uint256 amountOut,
         address maker,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata takerData
     ) external;
@@ -481,7 +481,7 @@ interface IABCWeightedSwapCallback {
         uint256 amountIn,
         uint256 amountOut,
         address maker,
-        address implementation,
+        address app,
         bytes32 strategyHash,
         bytes calldata takerData
     ) external;

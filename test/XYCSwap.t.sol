@@ -709,8 +709,8 @@ contract XYCSwapTest is Test, TestCallback {
     }
 
     // Override xycSwapCallback function from TestCallback
-    function xycSwapCallback(address tokenIn, address /* tokenOut */, uint256 amountIn, uint256 /* amountOut */, address maker_, address implementation, bytes32 strategyHash, bytes calldata /* takerData */) external override {
+    function xycSwapCallback(address tokenIn, address /* tokenOut */, uint256 amountIn, uint256 /* amountOut */, address maker_, address app, bytes32 strategyHash, bytes calldata /* takerData */) external override {
         IERC20(tokenIn).approve(address(aqua), amountIn);
-        aqua.push(maker_, implementation, strategyHash, tokenIn, amountIn);
+        aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
     }
 }
