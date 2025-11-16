@@ -520,6 +520,7 @@ forge test --match-test testXYCSwap -vvv
 This project is licensed under the **LicenseRef-Degensoft-Aqua-Source-1.1**
 
 See the [LICENSE](LICENSE) file for details.
+See the [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) file for information about third-party software, libraries, and dependencies used in this project.
 
 **Contact for licensing inquiries:**
 - 📧 license@degensoft.com 
