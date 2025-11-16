@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-Degensoft-ARSL-1.0-Audit
+# SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
 # Makefile for deploying and managing AquaRouter contracts
 #
 # Conditionally include .env or .env.automation based on OPS_LAUNCH_MODE

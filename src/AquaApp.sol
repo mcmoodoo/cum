@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: LicenseRef-Degensoft-ARSL-1.0-Audit
-
+// SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
 pragma solidity ^0.8.0;
 
-import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+/// @custom:license-url https://github.com/1inch/aqua/blob/main/LICENSES/Aqua-Source-1.1.txt
+/// @custom:copyright © 2025 Degensoft Ltd
 
 import { IAqua } from "./interfaces/IAqua.sol";
 import { TransientLock, TransientLockLib } from "./libs/TransientLock.sol";
@@ -13,7 +13,6 @@ import { TransientLock, TransientLockLib } from "./libs/TransientLock.sol";
 ///         - modifier nonReentrantLock(_reentrancyLocks[strategyHash])
 ///         - code _reentrancyLocks[strategyHash].lock(); ... _reentrancyLocks[strategyHash].unlock();
 abstract contract AquaApp {
-    using Clones for address;
     using TransientLockLib for TransientLock;
 
     error InvalidAquaStrategy(address maker, bytes32 strategyHash, bytes32 salt, address app, address actualThis);
