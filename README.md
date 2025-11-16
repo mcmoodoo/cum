@@ -1,5 +1,13 @@
 # Aqua Protocol
 
+[![CI](https://github.com/1inch/aqua/actions/workflows/ci.yml/badge.svg)](https://github.com/1inch/aqua/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/Coverage-61.54%25-yellow)](https://github.com/1inch/aqua)
+[![Tests](https://img.shields.io/badge/Tests-58%20Passing-brightgreen)](https://github.com/1inch/aqua/actions)
+[![npm](https://img.shields.io/badge/npm-v1.0.0-blue)](https://www.npmjs.com/package/@1inch/aqua)
+[![License](https://img.shields.io/badge/License-Degensoft--ARSL-yellow)](LICENSE)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
+[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://book.getfoundry.sh/)
+
 Shared liquidity layer protocol enabling liquidity providers to allocate balances across multiple trading strategies without fragmentation.
 
 ## Table of Contents

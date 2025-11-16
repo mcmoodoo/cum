@@ -133,7 +133,7 @@ build:; forge build
 
 tests :; forge test -vvv --gas-report
 
-coverage :; mkdir -p coverage && forge coverage --report lcov --ir-minimum --report-file coverage/lcov.info
+coverage :; mkdir -p coverage && forge coverage --report summary --ir-minimum --report-file coverage/lcov.info
 
 snapshot :; forge snapshot --no-match-test "testFuzz_*"
 
