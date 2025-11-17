@@ -36,7 +36,7 @@ Repo: https://github.com/balancer/balancer-v3-monorepo
 Commit: 2df6f4de904e5af0910d1eeafd306e378709a598
 License: GPL-3.0-only
 Copyright: © Balancer Labs
-Included files: src/apps/libs/FixedPoint.sol
+Included files: examples/apps/libs/FixedPoint.sol
 Original source: https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/solidity-utils/contracts/math/FixedPoint.sol
 License file: LICENSES/GPL-3.0-only-Balancer.txt
 
@@ -47,7 +47,7 @@ Repo: https://github.com/balancer/balancer-v3-monorepo
 Commit: 2df6f4de904e5af0910d1eeafd306e378709a598
 License: GPL-3.0-only
 Copyright: © Balancer Labs
-Included files: src/apps/libs/WeightedMath.sol
+Included files: examples/apps/libs/WeightedMath.sol
 Original source: https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/solidity-utils/contracts/math/WeightedMath.sol
 License file: LICENSES/GPL-3.0-only-Balancer.txt
 
@@ -58,7 +58,7 @@ Repo: https://github.com/balancer/balancer-v3-monorepo
 Commit: 2df6f4de904e5af0910d1eeafd306e378709a598
 License: MIT
 Copyright: © Balancer Labs
-Included files: src/apps/libs/LogExpMath.sol
+Included files: examples/apps/libs/LogExpMath.sol
 Original source: https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/solidity-utils/contracts/math/LogExpMath.sol
 License file: LICENSES/MIT-Balancer.txt
 

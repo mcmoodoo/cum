@@ -3,14 +3,14 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import { dynamic } from "./utils/Dynamic.sol";
+import { dynamic } from "test/utils/Dynamic.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { Aqua } from "src/Aqua.sol";
 import { AquaApp } from "src/AquaApp.sol";
-import { ABCWeightedSwap, IABCWeightedSwapCallback } from "src/apps/ABCWeightedSwap.sol";
+import { ABCWeightedSwap, IABCWeightedSwapCallback } from "examples/apps/ABCWeightedSwap.sol";
 
 // Mock ERC20 token for testing
 contract MockERC20 is ERC20 {

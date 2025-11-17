@@ -293,7 +293,7 @@ contract AquaTest is Test {
 
     // ========== BALANCES AND SAFEBALANCES TESTS ==========
 
-    function testBalancesReturnsZeroForNonExistentStrategy() public {
+    function testBalancesReturnsZeroForNonExistentStrategy() public view {
         // Query balance for non-existent strategy
         (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("nonexistent"), address(token1));
         assertEq(balance, 0);

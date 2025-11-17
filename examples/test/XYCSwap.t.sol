@@ -5,14 +5,14 @@ pragma solidity ^0.8.13;
 /// @custom:copyright © 2025 Degensoft Ltd
 
 import "forge-std/Test.sol";
-import { dynamic } from "./utils/Dynamic.sol";
+import { dynamic } from "test/utils/Dynamic.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { Aqua } from "src/Aqua.sol";
 import { AquaApp } from "src/AquaApp.sol";
-import { XYCSwap, IXYCSwapCallback } from "src/apps/XYCSwap.sol";
+import { XYCSwap, IXYCSwapCallback } from "examples/apps/XYCSwap.sol";
 
 // Mock ERC20 token for testing
 contract MockERC20 is ERC20 {

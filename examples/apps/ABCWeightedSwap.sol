@@ -4,9 +4,9 @@ pragma solidity 0.8.30;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import { IAqua } from "../interfaces/IAqua.sol";
+import { IAqua } from "../../src/interfaces/IAqua.sol";
 import { IABCWeightedSwapCallback } from "../apps/interfaces/IABCWeightedSwapCallback.sol";
-import { AquaApp, TransientLockLib, TransientLock } from "../AquaApp.sol";
+import { AquaApp, TransientLockLib, TransientLock } from "../../src/AquaApp.sol";
 
 import { WeightedMath } from "./libs/WeightedMath.sol";
 

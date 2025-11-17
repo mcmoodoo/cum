@@ -5,7 +5,7 @@
 [![Coverage](https://img.shields.io/badge/Coverage-61.54%25-yellow)](https://github.com/1inch/aqua)
 [![Tests](https://img.shields.io/github/actions/workflow/status/1inch/aqua/ci.yml?branch=main&label=tests)](https://github.com/1inch/aqua/actions)
 [![npm](https://img.shields.io/npm/v/@1inch/aqua.svg)](https://www.npmjs.com/package/@1inch/aqua)
-[![License](https://img.shields.io/badge/License-LicenseRef--Degensoft--Aqua--Source--1.1-orange)](LICENSE)
+[![License](https://img.shields.io/badge/LicenseRef-Degensoft-Aqua-Source-1.1-orange)](LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
 [![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://book.getfoundry.sh/)
 [![Whitepaper](https://img.shields.io/badge/Whitepaper-Dev%20Preview-informational)](whitepaper/aqua-dev-preview.md)
@@ -205,10 +205,10 @@ aqua.dock(app, strategyHash, tokens);
 
 ### For Traders
 
-**1. Implement callback interface**
+**1. Implement specific callback interface**
 ```solidity
-contract Trader is IXYCSwapCallback {
-    function xycSwapCallback(
+contract Trader is IAquaAppSwapCallback {
+    function aquaAppSwapCallback(
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
@@ -228,7 +228,7 @@ contract Trader is IXYCSwapCallback {
 
 **2. Execute trades**
 ```solidity
-xycSwap.swapExactIn(
+aquaApp.swapExactIn(
     strategy,
     true,              // zeroForOne
     1e18,              // amountIn
@@ -337,7 +337,7 @@ The function reverts if any token is not part of the strategy, preventing calcul
 // Transaction reverts if any token is not in the strategy
 ```
 
-**Taker Implementation**
+**Taker example Implementation**
 ```solidity
 contract SimpleTrader is IXYCSwapCallback {
     IAqua public immutable AQUA;
@@ -468,36 +468,6 @@ function _safeCheckAquaPush(
 ) internal view;
 ```
 
-### Callback Interfaces
-
-```solidity
-interface IXYCSwapCallback {
-    function xycSwapCallback(
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256 amountOut,
-        address maker,
-        address app,
-        bytes32 strategyHash,
-        bytes calldata takerData
-    ) external;
-}
-
-interface IABCWeightedSwapCallback {
-    function abcWeightedSwapCallback(
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256 amountOut,
-        address maker,
-        address app,
-        bytes32 strategyHash,
-        bytes calldata takerData
-    ) external;
-}
-```
-
 ## Getting Started
 
 ```bash
@@ -510,9 +480,6 @@ forge install
 
 # Run tests
 forge test
-
-# Run specific test
-forge test --match-test testXYCSwap -vvv
 ```
 
 ## License

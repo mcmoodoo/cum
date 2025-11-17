@@ -6,10 +6,10 @@ pragma solidity 0.8.30;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import { IAqua } from "../interfaces/IAqua.sol";
+import { IAqua } from "../../src/interfaces/IAqua.sol";
 import { IXYCSwapCallback } from "../apps/interfaces/IXYCSwapCallback.sol";
-import { TransientLock, TransientLockLib } from "../libs/ReentrancyGuard.sol";
-import { AquaApp } from "../AquaApp.sol";
+import { TransientLock, TransientLockLib } from "../../src/libs/ReentrancyGuard.sol";
+import { AquaApp } from "../../src/AquaApp.sol";
 
 contract XYCSwap is AquaApp {
     using Math for uint256;
