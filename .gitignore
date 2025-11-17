@@ -11,5 +11,4 @@ build
 .env*
 !.env.example
 .yarn
-.yarnrc.yml
 broadcast
