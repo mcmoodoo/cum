@@ -3,6 +3,15 @@
 
 pragma solidity ^0.8.24;
 
+/**
+ * @notice This file is NOT part of the Aqua Licensed Work as defined in the
+ * Degensoft Aqua Source License (LicenseRef-Degensoft-Aqua-Source-1.1).
+ *
+ * This file is provided separately under the GPL-3.0 License
+ * and is included only as an example implementation. It is not required for
+ * the operation of the Aqua protocol.
+ */
+
 import { LogExpMath } from "./LogExpMath.sol";
 
 /// @notice Support 18-decimal fixed point arithmetic. All Vault calculations use this for high and uniform precision.

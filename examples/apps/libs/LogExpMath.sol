@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: MIT
 // https://github.com/balancer/balancer-v3-monorepo/blob/main/pkg/solidity-utils/contracts/math/LogExpMath.sol
 
+/**
+ * @notice This file is NOT part of the Aqua Licensed Work as defined in the
+ * Degensoft Aqua Source License (LicenseRef-Degensoft-Aqua-Source-1.1).
+ *
+ * This file is provided separately under the MIT License
+ * and is included only as an example implementation. It is not required for
+ * the operation of the Aqua protocol.
+ */
+
 pragma solidity ^0.8.24;
 
 // solhint-disable

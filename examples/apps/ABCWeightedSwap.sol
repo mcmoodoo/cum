@@ -2,6 +2,15 @@
 
 pragma solidity 0.8.30;
 
+/**
+ * @notice This file is NOT part of the Aqua Licensed Work as defined in the
+ * Degensoft Aqua Source License (LicenseRef-Degensoft-Aqua-Source-1.1).
+ *
+ * This file is provided separately under the GPL-3.0 License
+ * and is included only as an example implementation. It is not required for
+ * the operation of the Aqua protocol.
+ */
+
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { IAqua } from "../../src/interfaces/IAqua.sol";
