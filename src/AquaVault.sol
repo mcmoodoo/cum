@@ -6,7 +6,6 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IAqua } from "./interfaces/IAqua.sol";
 import { IVerifier, PrivateVault } from "./libs/pp/PrivateVault.sol";
-import { XYCSwap } from "./apps/XYCSwap.sol";
 
 contract AquaVault is PrivateVault, ReentrancyGuard, Ownable {
     IAqua public immutable aqua;
@@ -130,4 +129,6 @@ contract AquaVault is PrivateVault, ReentrancyGuard, Ownable {
             tokens
         );
     }
+
+    // TODO: rebalance the denomination!!!
 }
