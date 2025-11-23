@@ -1,6 +1,6 @@
 [profile.default]
 solc-version = "0.8.30"
-runs = 10_000_000
+runs = 200
 via_ir = true
 libs = ["node_modules", "lib"]
 fs_permissions = [

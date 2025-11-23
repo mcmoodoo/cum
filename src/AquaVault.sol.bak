@@ -1,0 +1,377 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-ARSL-1.0-Audit
+pragma solidity 0.8.30;
+
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IAqua } from "./interfaces/IAqua.sol";
+import { IVerifier, PrivateVault } from "./libs/pp/PrivateVault.sol";
+
+/// @title AquaVault
+/// @notice A vault that acts as a single "maker" for Aqua.
+///         Liquidity providers deposit the underlying asset and receive shares.
+///         Aqua apps draw liquidity from this vault instead of individual LPs.
+contract AquaVault is Ownable2Step, ReentrancyGuard, PrivateVault {
+    IAqua public immutable AQUA;
+
+    IVerifier public withdrawalVerifier;
+
+    /// @notice Tracks active strategies per asset: asset => app => strategyHash => isActive
+    mapping(address => mapping(address => mapping(bytes32 => bool))) public activeStrategies;
+
+    /// @notice Tracks strategy hashes per asset and app for iteration: asset => app => strategyHashes[]
+    mapping(address => mapping(address => bytes32[])) public strategyHashes;
+
+    /// @notice Emitted when a strategy is shipped for this vault
+    event StrategyShipped(address indexed app, bytes32 indexed strategyHash, bytes strategy, uint256 amount);
+
+    /// @notice Emitted when additional capacity is pushed to an existing strategy
+    event StrategyPushed(address indexed app, bytes32 indexed strategyHash, uint256 amount);
+
+    /// @notice Emitted when a strategy is docked for this vault
+    event StrategyDocked(address indexed app, bytes32 indexed strategyHash);
+
+    /// @notice Emitted when a public deposit is made
+    event Deposit(address indexed asset, address indexed depositor, uint256 amount);
+
+    /// @notice Emitted when a public withdrawal is made
+    event Withdrawal(address indexed asset, address indexed recipient, uint256 amount);
+
+    constructor(
+        IAqua aqua_,
+        address withdrawalVerifier_,
+        uint256 treeDepth_,
+        bytes32[] memory initialRoots_,
+        address[] memory tokenAddresses_,
+        uint256[] memory denominations_
+    )
+        Ownable(msg.sender)
+        PrivateVault(treeDepth_, initialRoots_, tokenAddresses_, denominations_)
+    {
+        AQUA = aqua_;
+        withdrawalVerifier = IVerifier(withdrawalVerifier_);
+        // Pre-approve all supported assets to Aqua
+        for (uint256 i = 0; i < tokenAddresses_.length; i++) {
+            IERC20(tokenAddresses_[i]).approve(address(aqua_), type(uint256).max);
+        }
+    }
+
+    /// @notice Ship a new multi-asset strategy for a given app with the specified initial capacities.
+    /// @param app The app (strategy implementation) address
+    /// @param strategy Strategy init data (unhashed, as required by Aqua.ship)
+    /// @param tokens Array of token addresses for this strategy
+    /// @param amounts Array of initial capacities for each token
+    /// @return strategyHash The keccak256 hash of the strategy bytes
+    function shipStrategy(
+        address app,
+        bytes calldata strategy,
+        address[] calldata tokens,
+        uint256[] calldata amounts
+    ) external onlyOwner returns (bytes32 strategyHash) {
+        strategyHash = AQUA.ship(app, strategy, tokens, amounts);
+
+        // Track the active strategy for all tokens
+        for (uint256 i = 0; i < tokens.length; i++) {
+            activeStrategies[tokens[i]][app][strategyHash] = true;
+            strategyHashes[tokens[i]][app].push(strategyHash);
+        }
+
+        uint256 totalAmount = 0;
+        for (uint256 i = 0; i < amounts.length; i++) {
+            totalAmount += amounts[i];
+        }
+
+        emit StrategyShipped(app, strategyHash, strategy, totalAmount);
+    }
+
+    /// @notice Ship a new single-asset strategy for a given app with the specified initial capacity.
+    /// @param app The app (strategy implementation) address
+    /// @param asset The asset address for this strategy
+    /// @param strategy Strategy init data (unhashed, as required by Aqua.ship)
+    /// @param amount Initial capacity to make available to the app via Aqua
+    /// @return strategyHash The keccak256 hash of the strategy bytes
+    function shipStrategySingle(
+        address app,
+        address asset,
+        bytes calldata strategy,
+        uint256 amount
+    ) external onlyOwner returns (bytes32 strategyHash) {
+        address[] memory tokens = new address[](1);
+        tokens[0] = asset;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amount;
+        strategyHash = AQUA.ship(app, strategy, tokens, amounts);
+
+        // Track the active strategy
+        activeStrategies[asset][app][strategyHash] = true;
+        strategyHashes[asset][app].push(strategyHash);
+
+        emit StrategyShipped(app, strategyHash, strategy, amount);
+    }
+
+    /// @notice Push additional capacity for an already shipped strategy (single-asset).
+    /// @param app The app address
+    /// @param strategyHash The hash of the previously shipped strategy
+    /// @param asset The asset address for this strategy
+    /// @param amount Additional capacity to add
+    function pushCapacitySingle(
+        address app,
+        bytes32 strategyHash,
+        address asset,
+        uint256 amount
+    ) external onlyOwner {
+        AQUA.push(address(this), app, strategyHash, asset, amount);
+        emit StrategyPushed(app, strategyHash, amount);
+    }
+
+    /// @notice Dock a previously shipped single-asset strategy.
+    /// @param app The app address
+    /// @param strategyHash The hash of the previously shipped strategy
+    /// @param asset The asset address for this strategy
+    function dockStrategySingle(address app, bytes32 strategyHash, address asset) external onlyOwner {
+        address[] memory tokens = new address[](1);
+        tokens[0] = asset;
+        AQUA.dock(app, strategyHash, tokens);
+
+        // Mark strategy as inactive
+        activeStrategies[asset][app][strategyHash] = false;
+
+        emit StrategyDocked(app, strategyHash);
+    }
+
+    /// @notice Internal helper to distribute deposited amount across all active strategies for an asset
+    /// @param asset The asset address
+    /// @param totalAmount The total amount to distribute
+    function _pushToActiveStrategies(address asset, uint256 totalAmount) internal {
+        // Get all apps that have strategies for this asset
+        // Note: In a production system, you might want to maintain a separate list of apps
+        // For now, we'll need to call this function with specific app/strategy pairs
+        // This is a simplified version - actual implementation may vary based on your needs
+    }
+
+    /// @notice Deposit assets into the vault with optional private deposit
+    /// @param asset The token address to deposit
+    /// @param amount The amount to deposit
+    /// @param commitment Optional commitment for private deposit (pass bytes32(0) for public deposit)
+    function deposit(
+        address asset,
+        uint256 amount,
+        bytes32 commitment
+    ) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+
+        // Transfer tokens from depositor to vault
+        IERC20(asset).transferFrom(msg.sender, address(this), amount);
+
+        // If commitment is provided, handle as private deposit
+        if (commitment != bytes32(0)) {
+            // Get the vault denomination
+            uint256 denomination = vaults[asset].denomination;
+            require(amount == denomination, "Amount must match denomination for private deposit");
+
+            // Perform private deposit
+            _privateDeposit(asset, commitment);
+        }
+
+        emit Deposit(asset, msg.sender, amount);
+    }
+
+    /// @notice Withdraw assets from the vault with optional private withdrawal
+    /// @param proof ZK proof for private withdrawal (empty for public withdrawal)
+    /// @param asset The token address to withdraw
+    /// @param merkleRoot The Merkle root for private withdrawal
+    /// @param nullifierHash The nullifier hash for private withdrawal
+    /// @param recipient The recipient address
+    /// @param relayer The relayer address (for private withdrawal)
+    /// @param fee The relayer fee (for private withdrawal)
+    function withdraw(
+        bytes calldata proof,
+        address asset,
+        bytes32 merkleRoot,
+        bytes32 nullifierHash,
+        address recipient,
+        address relayer,
+        uint256 fee
+    ) external nonReentrant {
+        // Get denomination
+        uint256 denomination = vaults[asset].denomination;
+        require(denomination > 0, "Invalid denomination");
+
+        // Check if we have enough balance in the vault
+        uint256 vaultBalance = IERC20(asset).balanceOf(address(this));
+        require(vaultBalance >= denomination, "Insufficient vault balance");
+
+        // Perform private withdrawal verification
+        _privateWithdraw(withdrawalVerifier, proof, asset, merkleRoot, nullifierHash, recipient, relayer, fee);
+
+        // Transfer to recipient minus fee
+        uint256 recipientAmount = denomination - fee;
+        IERC20(asset).transfer(recipient, recipientAmount);
+
+        // Transfer fee to relayer if applicable
+        if (fee > 0 && relayer != address(0)) {
+            IERC20(asset).transfer(relayer, fee);
+        }
+
+        emit Withdrawal(asset, recipient, denomination);
+    }
+
+    /// @notice Internal helper to rebalance a strategy by docking old one and shipping new one
+    /// @dev Called automatically during deposits/withdrawals
+    /// @param oldApp The old app address to dock
+    /// @param oldHash The old strategy hash to dock
+    /// @param newApp The new app address (can be same as old)
+    /// @param asset The asset address
+    /// @param newStrategy The new strategy data to ship
+    /// @param newAmount The new amount to allocate
+    /// @return newHash The hash of the newly shipped strategy
+    function _rebalanceStrategy(
+        address oldApp,
+        bytes32 oldHash,
+        address newApp,
+        address asset,
+        bytes memory newStrategy,
+        uint256 newAmount
+    ) internal returns (bytes32 newHash) {
+        // Dock old strategy
+        if (oldHash != bytes32(0) && activeStrategies[asset][oldApp][oldHash]) {
+            address[] memory tokens = new address[](1);
+            tokens[0] = asset;
+            AQUA.dock(oldApp, oldHash, tokens);
+            activeStrategies[asset][oldApp][oldHash] = false;
+            emit StrategyDocked(oldApp, oldHash);
+        }
+
+        // Ship new strategy if amount > 0
+        if (newAmount > 0) {
+            address[] memory tokens = new address[](1);
+            tokens[0] = asset;
+            uint256[] memory amounts = new uint256[](1);
+            amounts[0] = newAmount;
+
+            newHash = AQUA.ship(newApp, newStrategy, tokens, amounts);
+            activeStrategies[asset][newApp][newHash] = true;
+            strategyHashes[asset][newApp].push(newHash);
+            emit StrategyShipped(newApp, newHash, newStrategy, newAmount);
+        }
+    }
+
+    /// @notice Get the available balance for an asset (balance held in vault, not in strategies)
+    /// @param asset The asset address
+    /// @return The available balance in the vault (tokens physically held by vault)
+    function getAvailableBalance(address asset) external view returns (uint256) {
+        return IERC20(asset).balanceOf(address(this));
+    }
+
+    /// @notice Get the total balance allocated to a specific strategy
+    /// @param asset The asset address
+    /// @param app The app address
+    /// @param strategyHash The strategy hash
+    /// @return The balance allocated to the strategy in Aqua
+    function getStrategyBalance(
+        address asset,
+        address app,
+        bytes32 strategyHash
+    ) external view returns (uint256) {
+        (uint248 balance,) = AQUA.rawBalances(address(this), app, strategyHash, asset);
+        return uint256(balance);
+    }
+
+    /// @notice Get the total liquidity for an asset across all strategies and vault balance
+    /// @dev This includes both vault balance and all strategy allocations
+    /// @param asset The asset address
+    /// @param apps Array of app addresses to check
+    /// @param hashes Array of strategy hashes corresponding to each app
+    /// @return total The total liquidity (vault balance + all strategy balances)
+    function getTotalLiquidity(
+        address asset,
+        address[] calldata apps,
+        bytes32[] calldata hashes
+    ) external view returns (uint256 total) {
+        require(apps.length == hashes.length, "Array length mismatch");
+
+        // Start with vault balance
+        total = IERC20(asset).balanceOf(address(this));
+
+        // Add all strategy balances
+        for (uint256 i = 0; i < apps.length; i++) {
+            if (activeStrategies[asset][apps[i]][hashes[i]]) {
+                (uint248 balance,) = AQUA.rawBalances(address(this), apps[i], hashes[i], asset);
+                total += uint256(balance);
+            }
+        }
+    }
+
+    /// @notice Get the actual available balance accounting for strategy allocations
+    /// @dev This shows how much liquidity is NOT currently allocated to strategies
+    /// @param asset The asset address
+    /// @return available The available balance that can be withdrawn immediately
+    function getUnallocatedBalance(address asset) external view returns (uint256) {
+        // Only returns the physical balance in the vault
+        // Strategies can have different balances due to push/pull by takers
+        return IERC20(asset).balanceOf(address(this));
+    }
+
+    /// @notice Check if a strategy is active
+    /// @param asset The asset address
+    /// @param app The app address
+    /// @param strategyHash The strategy hash
+    /// @return Whether the strategy is active
+    function isStrategyActive(
+        address asset,
+        address app,
+        bytes32 strategyHash
+    ) external view returns (bool) {
+        return activeStrategies[asset][app][strategyHash];
+    }
+
+    /// @notice Update the denomination for an asset based on current vault balance
+    /// @dev This should be called after takers push/pull to update the private vault denomination
+    /// @param asset The asset address
+    /// @param newDenomination The new denomination to set
+    function updateDenomination(address asset, uint256 newDenomination) external onlyOwner {
+        require(newDenomination > 0, "Denomination must be greater than 0");
+        setDenomination(asset, newDenomination);
+    }
+
+    /// @notice Internal helper to calculate and update denomination based on total liquidity and active deposits
+    /// @dev Automatically calculates denomination: totalLiquidity / activeDepositCount
+    /// @param asset The asset address
+    /// @param apps Array of app addresses to check for strategy balances
+    /// @param hashes Array of strategy hashes corresponding to each app
+    function _updateDenominationAuto(
+        address asset,
+        address[] memory apps,
+        bytes32[] memory hashes
+    ) internal {
+        require(apps.length == hashes.length, "Array length mismatch");
+
+        // Get active deposit count (deposits - withdrawals)
+        uint256 activeDepositCount = getActiveDepositCount(asset);
+
+        // If no active deposits, skip denomination update
+        if (activeDepositCount == 0) {
+            return;
+        }
+
+        // Calculate total liquidity (vault balance + all strategy balances)
+        uint256 totalLiquidity = IERC20(asset).balanceOf(address(this));
+
+        for (uint256 i = 0; i < apps.length; i++) {
+            if (activeStrategies[asset][apps[i]][hashes[i]]) {
+                (uint248 balance,) = AQUA.rawBalances(address(this), apps[i], hashes[i], asset);
+                totalLiquidity += uint256(balance);
+            }
+        }
+
+        // Calculate new denomination based on total liquidity and active deposits
+        uint256 newDenomination = totalLiquidity / activeDepositCount;
+
+        // Only update if denomination is valid
+        if (newDenomination > 0) {
+            setDenomination(asset, newDenomination);
+        }
+    }
+}
+
